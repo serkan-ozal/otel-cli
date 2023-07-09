@@ -283,7 +283,6 @@ export class ExportCommandExecutor implements CommandExecutor {
     private async _exportTraceRequest(
         traceRequest: TraceRequest
     ): Promise<void> {
-        console.log(JSON.stringify(traceRequest));
         const resolvedExporterOTLPEndpoint =
             this._resolveExporterOTLPEndpoint();
         const traceExporter: TraceExporter = createTraceExporter(
