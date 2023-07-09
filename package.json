@@ -1,6 +1,6 @@
 {
     "name": "otel-cli",
-    "version": "0.0.1",
+    "version": "0.0.0",
     "description": "OTEL CLI is a command-line tool for sending OpenTelemetry traces.",
     "author": "Serkan Ozal <serkanozal86@gmail.com> (https://github.com/serkan-ozal)",
     "homepage": "https://github.com/serkan-ozal/otel-cli",
@@ -8,17 +8,18 @@
     "license": "Apache License 2",
     "main": "./dist/index.js",
     "bin": {
-        "merloc": "./dist/index.js"
+        "otel-cli": "./dist/index.js"
     },
     "keywords": [
-        "opentelementry",
+        "opentelemetry",
+        "open-telemetry",
         "otel",
         "tracing",
         "monitoring",
         "cli"
     ],
     "scripts": {
-        "build": "tsc && cp -r helpers dist/",
+        "build": "tsc",
         "start": "ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" ./src/index.ts",
         "test": "echo \"Error: no test specified\" && exit 1",
         "lint-check": "prettier --config .prettierrc.json --check ./src/*.ts ./src/**/*.ts",
@@ -53,9 +54,6 @@
     "dependencies": {
         "axios": "^0.27.2",
         "chalk": "^4.1.2",
-        "commander": "^9.4.1",
-        "tmp": "^0.2.1",
-        "uuid": "^9.0.0",
-        "uuid-by-string": "^4.0.0"
+        "commander": "^9.4.1"
     }
 }
