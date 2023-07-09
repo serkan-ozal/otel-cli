@@ -1,5 +1,4 @@
 import { CommandExecutor } from '../CommandExecutor';
-import { error } from '../../logger';
 import { exit } from '../../exit';
 import { Span, SpanKind, SpanStatus, SpanStatusCode } from '../../domain/Span';
 import {
@@ -57,7 +56,7 @@ export class ExportCommandExecutor implements CommandExecutor {
             (keyValuePairs || []).map((pair: string) => {
                 const parts: string[] = pair.split('=');
                 if (parts.length != 2) {
-                    error(
+                    logger.error(
                         `Key-value pair must be in "key=value" format: ${pair}`
                     );
                     exit(1);
@@ -115,30 +114,30 @@ export class ExportCommandExecutor implements CommandExecutor {
 
     private _checkOptions(): void {
         if (!this.exporterOTLPEndpoint && !this.exporterOTLPTracesEndpoint) {
-            error(
+            logger.error(
                 'One of the OTEL Exporter OTLP endpoint ' +
                     'or OTEL Exporter OTLP traces endpoint configurations must be specified!'
             );
             exit(1);
         }
         if (this.traceParent && !validateTraceParent(this.traceParent)) {
-            error(`Invalid trace parent: ${this.traceParent}!`);
+            logger.error(`Invalid trace parent: ${this.traceParent}!`);
             exit(1);
         }
         if (!this.traceId) {
-            error(`Trace id is not specified: ${this.traceId}!`);
+            logger.error(`Trace id is not specified: ${this.traceId}!`);
             exit(1);
         }
         if (!validateTraceId(this.traceId)) {
-            error(`Invalid trace id: ${this.traceId}!`);
+            logger.error(`Invalid trace id: ${this.traceId}!`);
             exit(1);
         }
         if (!validateSpanId(this.spanId)) {
-            error(`Invalid span id: ${this.spanId}!`);
+            logger.error(`Invalid span id: ${this.spanId}!`);
             exit(1);
         }
         if (this.parentSpanId && !validateSpanId(this.parentSpanId)) {
-            error(`Invalid parent span id: ${this.parentSpanId}!`);
+            logger.error(`Invalid parent span id: ${this.parentSpanId}!`);
             exit(1);
         }
         if (
@@ -147,7 +146,7 @@ export class ExportCommandExecutor implements CommandExecutor {
             !this.spanStartTimeMillis &&
             !this.spanStartTimeSecs
         ) {
-            error(
+            logger.error(
                 'Span start time must be specified in one of the supported formats ' +
                     '(nanoseconds, microseconds, milliseconds, or seconds)!'
             );
@@ -159,7 +158,7 @@ export class ExportCommandExecutor implements CommandExecutor {
             !this.spanEndTimeMillis &&
             !this.spanEndTimeSecs
         ) {
-            error(
+            logger.error(
                 'Span end time must be specified in one of the supported formats ' +
                     '(nanoseconds, microseconds, milliseconds, or seconds)!'
             );

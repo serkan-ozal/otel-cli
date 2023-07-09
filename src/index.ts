@@ -1,6 +1,8 @@
 #! /usr/bin/env node
 
 import { OTEL_CLI_NAME, OTEL_CLI_VERSION } from './constants';
+import * as logger from './logger';
+import { exit } from './exit';
 import { Commands, CommandExecutor, createCommandExecutor } from './command';
 
 import { Command, OptionValues, program } from 'commander';
@@ -19,7 +21,15 @@ for (let commandName of Object.values(Commands).filter((o) =>
     const command: Command = program.command(commandName);
     commandExecutor.defineOptions(command);
     command.action(async (options: OptionValues) => {
-        await commandExecutor.execute(options);
+        try {
+            await commandExecutor.execute(options);
+        } catch (err: any) {
+            logger.error(
+                `Error occurred while executing ${commandName} command`,
+                err
+            );
+            exit(1);
+        }
     });
 }
 
