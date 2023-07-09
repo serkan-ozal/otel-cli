@@ -54,14 +54,14 @@ export class ExportCommandExecutor implements CommandExecutor {
     private _parseKeyValue(keyValuePairs: string[]): Map<string, string> {
         return new Map(
             (keyValuePairs || []).map((pair: string) => {
-                const parts: string[] = pair.split('=');
-                if (parts.length != 2) {
+                const separatorIdx: number = pair.indexOf('=')
+                if (separatorIdx < 0) {
                     logger.error(
                         `Key-value pair must be in "key=value" format: ${pair}`
                     );
                     exit(1);
                 }
-                return [parts[0], parts[1]];
+                return [pair.substring(0, separatorIdx), pair.substring(separatorIdx + 1)];
             })
         );
     }
