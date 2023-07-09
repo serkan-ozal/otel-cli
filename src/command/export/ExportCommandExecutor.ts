@@ -298,7 +298,7 @@ export class ExportCommandExecutor implements CommandExecutor {
                 );
             }
             await traceExporter.export(traceRequest);
-            logger.info('Exported trace request');
+            logger.debug('Exported trace request');
         } catch (err: any) {
             logger.error('Unable to export trace request', err);
         }
