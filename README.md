@@ -159,7 +159,7 @@ popd
 end_time=$(date +%s%9N)
 
 # Export span of the auth service build process
-npm run start -- export \
+otel-cli export \
   --name build-auth-service --start-time-nanos ${start_time} --end-time-nanos ${end_time} \
   --kind INTERNAL --status-code OK --attributes serviceName=auth-service buildTool=maven runtime=java
 
@@ -180,7 +180,7 @@ popd
 end_time=$(date +%s%9N)
 
 # Export span of the payment service project build process
-npm run start -- export \
+otel-cli export \
   --name build-payment-service --start-time-nanos ${start_time} --end-time-nanos ${end_time} \
   --kind INTERNAL --status-code OK --attributes serviceName=payment-service buildTool=npm runtime=node
 
@@ -209,7 +209,7 @@ popd
 end_time=$(node -e 'console.log(Date.now())')
 
 # Export span of the auth service build process
-npm run start -- export \
+otel-cli export \
   --name build-auth-service --start-time-nanos ${start_time} --end-time-nanos ${end_time} \
   --kind INTERNAL --status-code OK --attributes serviceName=auth-service buildTool=maven runtime=java
 
@@ -230,7 +230,7 @@ popd
 end_time=$(node -e 'console.log(Date.now())')
 
 # Export span of the payment service project build process
-npm run start -- export \
+otel-cli export \
   --name build-payment-service --start-time-nanos ${start_time} --end-time-nanos ${end_time} \
   --kind INTERNAL --status-code OK --attributes serviceName=payment-service buildTool=npm runtime=node
 
@@ -268,7 +268,7 @@ popd
 end_time1=$(date +%s%9N)
 
 # Export span of the auth service project build process
-npm run start -- export \
+otel-cli export \
   --name build-auth-service --parent-span-id ${root_span_id} --start-time-nanos ${start_time1} --end-time-nanos ${end_time1} \
   --kind INTERNAL --status-code OK --attributes serviceName=auth-service buildTool=maven runtime=java  
 
@@ -289,7 +289,7 @@ popd
 end_time2=$(date +%s%9N)
 
 # Export span of the payment service project build process
-npm run start -- export \
+otel-cli export \
   --name build-payment-service --parent-span-id ${root_span_id} --start-time-millis ${start_time2} --end-time-millis ${end_time2} \
   --kind INTERNAL --status-code OK --attributes serviceName=payment-service buildTool=npm runtime=node
   
@@ -299,7 +299,7 @@ npm run start -- export \
 end_time0=$(date +%s%9N)
 
 # Export span of the whole build process
-npm run start -- export \
+otel-cli export \
   --name build-services --span-id ${root_span_id} --start-time-millis ${start_time0} --end-time-millis ${end_time0} \
   --kind INTERNAL --status-code OK
 
@@ -336,7 +336,7 @@ popd
 end_time1=$(node -e 'console.log(Date.now())')
 
 # Export span of the auth service project build process
-npm run start -- export \
+otel-cli export \
   --name build-auth-service --parent-span-id ${root_span_id} --start-time-nanos ${start_time1} --end-time-nanos ${end_time1} \
   --kind INTERNAL --status-code OK --attributes serviceName=auth-service buildTool=maven runtime=java  
 
@@ -357,7 +357,7 @@ popd
 end_time2=$(node -e 'console.log(Date.now())')
 
 # Export span of the payment service project build process
-npm run start -- export \
+otel-cli export \
   --name build-payment-service --parent-span-id ${root_span_id} --start-time-millis ${start_time2} --end-time-millis ${end_time2} \
   --kind INTERNAL --status-code OK --attributes serviceName=payment-service buildTool=npm runtime=node
   
@@ -367,7 +367,7 @@ npm run start -- export \
 end_time0=$(node -e 'console.log(Date.now())')
 
 # Export span of the whole build process
-npm run start -- export \
+otel-cli export \
   --name build-services --span-id ${root_span_id} --start-time-millis ${start_time0} --end-time-millis ${end_time0} \
   --kind INTERNAL --status-code OK
 
