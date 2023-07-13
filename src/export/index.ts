@@ -1,5 +1,7 @@
 import { HttpJsonTraceExporter } from './http';
 import { TraceExporter } from './TraceExporter';
+import { ServerTraceExporter } from './server';
+import { DEFAULT_SERVER_HOST } from '../constants';
 
 export * from './TraceExporter';
 
@@ -30,7 +32,7 @@ export function createTraceExporter(
     exporterOTLPProtocol: string,
     exporterOTLPEndpoint: string,
     exporterOTLPHeaders: Map<string, string>
-) {
+): TraceExporter {
     const traceExporterFactory: TraceExporterFactory =
         TRACE_EXPORTER_FACTORY_MAP[exporterOTLPProtocol];
     if (!traceExporterFactory) {
@@ -39,4 +41,8 @@ export function createTraceExporter(
         );
     }
     return traceExporterFactory(exporterOTLPEndpoint, exporterOTLPHeaders);
+}
+
+export function createServerTraceExporter(serverPort: number): TraceExporter {
+    return new ServerTraceExporter(DEFAULT_SERVER_HOST, serverPort);
 }

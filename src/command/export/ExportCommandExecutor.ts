@@ -6,6 +6,7 @@ import {
     extractTraceIdFromTraceParent,
     flattenAttributes,
     generateSpanId,
+    parseKeyValue,
     validateSpanId,
     validateTraceId,
     validateTraceParent,
@@ -19,7 +20,7 @@ import {
     RESOURCE_ATTRIBUTES,
 } from '../../constants';
 import { TraceRequest } from '../../domain/TraceRequest';
-import { createTraceExporter, ExporterOTLPProtocols, TraceExporter } from '../../export';
+import { createServerTraceExporter, createTraceExporter, ExporterOTLPProtocols, TraceExporter } from '../../export';
 import * as logger from '../../logger';
 import { Commands } from '../index';
 
@@ -50,21 +51,7 @@ export class ExportCommandExecutor implements CommandExecutor {
     private spanStatusCode: string;
     private spanStatusMessage: string;
     private spanAttributes: Map<string, string>;
-
-    private _parseKeyValue(keyValuePairs: string[]): Map<string, string> {
-        return new Map(
-            (keyValuePairs || []).map((pair: string) => {
-                const separatorIdx: number = pair.indexOf('=')
-                if (separatorIdx < 0) {
-                    logger.error(
-                        `Key-value pair must be in "key=value" format: ${pair}`
-                    );
-                    exit(1);
-                }
-                return [pair.substring(0, separatorIdx), pair.substring(separatorIdx + 1)];
-            })
-        );
-    }
+    private serverPort: number;
 
     private _tryToGetTraceIdFromTraceParent(options: OptionValues): string | undefined {
         const traceParent: string = options.traceParent || process.env.TRACEPARENT;
@@ -89,7 +76,7 @@ export class ExportCommandExecutor implements CommandExecutor {
         this.exporterOTLPEndpoint = options.endpoint;
         this.exporterOTLPTracesEndpoint = options.tracesEndpoint;
         this.exporterOTLPProtocol = options.protocol;
-        this.exporterOTLPHeaders = this._parseKeyValue(options.headers);
+        this.exporterOTLPHeaders = parseKeyValue(options.headers);
 
         this.traceParent = options.traceparent || process.env.TRACEPARENT;
         this.traceParentPrint = options.traceparentPrint;
@@ -109,7 +96,8 @@ export class ExportCommandExecutor implements CommandExecutor {
         this.spanEndTimeSecs = parseInt(options.endTimeSecs);
         this.spanStatusCode = options.statusCode;
         this.spanStatusMessage = options.statusMessage;
-        this.spanAttributes = this._parseKeyValue(options.attributes);
+        this.spanAttributes = parseKeyValue(options.attributes);
+        this.serverPort = parseInt(options.serverPort);
     }
 
     private _checkOptions(): void {
@@ -166,7 +154,7 @@ export class ExportCommandExecutor implements CommandExecutor {
         }
     }
 
-    private _resolveExporterOTLPEndpoint() {
+    private _resolveExporterOTLPEndpoint(): string {
         return (
             this.exporterOTLPTracesEndpoint ||
             this.exporterOTLPEndpoint + '/v1/traces'
@@ -273,6 +261,18 @@ export class ExportCommandExecutor implements CommandExecutor {
         ];
     }
 
+    private _createTraceExporter(): TraceExporter {
+        if (this.serverPort) {
+            return createServerTraceExporter(this.serverPort);
+        } else {
+            return createTraceExporter(
+                this.exporterOTLPProtocol,
+                this._resolveExporterOTLPEndpoint(),
+                this.exporterOTLPHeaders
+            );
+        }
+    }
+
     private _createTraceRequest(): TraceRequest {
         return {
             resourceSpans: this._createResourceSpans(),
@@ -282,19 +282,10 @@ export class ExportCommandExecutor implements CommandExecutor {
     private async _exportTraceRequest(
         traceRequest: TraceRequest
     ): Promise<void> {
-        const resolvedExporterOTLPEndpoint =
-            this._resolveExporterOTLPEndpoint();
-        const traceExporter: TraceExporter = createTraceExporter(
-            this.exporterOTLPProtocol,
-            this._resolveExporterOTLPEndpoint(),
-            this.exporterOTLPHeaders
-        );
+        const traceExporter: TraceExporter = this._createTraceExporter();
         try {
             if (logger.isDebugEnabled()) {
-                logger.debug(
-                    `Exporting trace request to : ${resolvedExporterOTLPEndpoint}`,
-                    traceRequest
-                );
+                logger.debug(`Exporting trace request:`, traceRequest);
             }
             await traceExporter.export(traceRequest);
             logger.debug('Exported trace request');
@@ -432,6 +423,12 @@ export class ExportCommandExecutor implements CommandExecutor {
                     '-a --attributes <key-value-pairs...>',
                     'Span attributes as space seperated key-value pairs (key1=value1 key2=value2 key3=value3)')
                     .makeOptionMandatory(false)
+            )
+            .addOption(
+                new Option('-sp, --server-port <port>',
+                    'OTEL CLI server port for communicating over to export traces asynchronously in background')
+                    .makeOptionMandatory(false)
+                    .default(process.env.OTEL_CLI_SERVER_PORT)
             );
     }
 

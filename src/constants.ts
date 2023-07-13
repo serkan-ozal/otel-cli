@@ -1,6 +1,9 @@
 export const OTEL_CLI_NAME = 'otel-cli';
 export const { version: OTEL_CLI_VERSION } = require('../package.json');
 
+export const DEFAULT_SERVER_HOST: string = 'localhost';
+export const DEFAULT_SERVER_PORT: number = 7777;
+
 export const RESOURCE_ATTRIBUTES = {
     // Logical name of the service.
     SERVICE_NAME: 'service.name',
