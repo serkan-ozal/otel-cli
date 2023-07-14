@@ -131,6 +131,63 @@ By this command, you should see the installed version number if everything is in
   end time is calculated by multiplying the option value by `1000000000` (to convert seconds to nanoseconds).
 - Else, CLI fails with the error (`Span end time must be specified in one of the supported formats (nanoseconds, microseconds, milliseconds, or seconds)!`).
 
+#### How to export traces asynchronously in background?
+By default, `export` command sends traces synchronously to the configured OTLP endpoint by blocking the caller in the script.
+But OTEL CLI also supports sending traces asynchronously through OTEL CLI server by exporting traces to the OTEL CLI server first over the specified HTTP port.
+Then OTEL CLI server buffers the received traces and sends them to the target OTLP endpoint asynchronously in background.
+
+##### Start OTEL CLI server
+To be able to start OTEL CLI server, you can use `start-server` [command](#start-server-command).
+By default, `start-server` command is blocking, so you should run it in the background yourself to not to block your program/script.
+
+For example, in the Linux and MacOS environments, you can use `&` operation after the command to run it in the background:
+```bash
+export OTEL_EXPORTER_OTLP_ENDPOINT=<YOUR-OTEL-VENDOR-OTLP-ENDPOINT>
+export OTEL_EXPORTER_OTLP_HEADERS=<YOUR-OTEL-VENDOR-API-AUTH-HEADER-NAME>=<YOUR-OTEL-VENDOR-API-AUTH-TOKEN>
+# OTEL CLI server port is "7777" by default
+export OTEL_CLI_SERVER_PORT=12345
+
+# "start-server" command is blocking for the caller.
+# So we put "&" at the end of command to run OTEL CLI server in background without blocking here.
+otel-cli start-server &
+```
+
+or by specifying configurations through the options:
+```bash
+# "start-server" command is blocking for the caller.
+# So we put "&" at the end of command to run OTEL CLI server in background without blocking here.
+otel-cli start-server \
+  --endpoint <YOUR-OTEL-VENDOR-OTLP-ENDPOINT> \
+  --headers <YOUR-OTEL-VENDOR-API-AUTH-HEADER-NAME>=<YOUR-OTEL-VENDOR-API-AUTH-TOKEN> \
+  --server-port 12345 \
+  &
+```
+
+##### Shutdown OTEL CLI server
+Since the OTEL CLI server buffers the received traces to be send them asynchronously, 
+it should be shutdown gracefully to flush the buffered traces by exporting them to the configured OTLP endpoint before terminated.
+Otherwise, some of the traces might be lost.
+
+To be able to shutdown OTEL CLI server gracefully, you can use `shutdown-server` [command](#shutdown-server-command)
+by specifying the **same** port number you use while starting server.
+
+```bash
+# OTEL CLI server port is "7777" by default
+export OTEL_CLI_SERVER_PORT=12345
+
+otel-cli shutdown-server
+```
+
+or by specifying configurations through the options:
+```bash
+otel-cli shutdown-server --server-port 12345
+```
+
+> :warning:
+Even you don't shutdown the server manually by yourself, 
+OTEL CLI server shutdown itself automatically when the parent process (program or script) exits.
+But in any way, it is good practice to shutdown by yourself explicitly.
+
 ### `generate-id` command
 
 | CLI Option                                  | Environment Variable    | Mandatory | Choices                 | Default Value | Description                    | Example                                |
@@ -158,7 +215,7 @@ By this command, you should see the installed version number if everything is in
 
 ## Examples
 
-#### Export trace [UNIX]
+#### Export trace [Linux]
 ```bash
 export OTEL_EXPORTER_OTLP_ENDPOINT=<YOUR-OTEL-VENDOR-OTLP-ENDPOINT>
 export OTEL_EXPORTER_OTLP_HEADERS=<YOUR-OTEL-VENDOR-API-AUTH-HEADER-NAME>=<YOUR-OTEL-VENDOR-API-AUTH-TOKEN>
@@ -231,7 +288,7 @@ end_time=$(node -e 'console.log(Date.now())')
 
 # Export span of the auth service build process
 otel-cli export \
-  --name build-auth-service --start-time-nanos ${start_time} --end-time-nanos ${end_time} \
+  --name build-auth-service --start-time-millis ${start_time} --end-time-millis ${end_time} \
   --kind INTERNAL --status-code OK --attributes serviceName=auth-service buildTool=maven runtime=java
 
 ########################################
@@ -252,14 +309,14 @@ end_time=$(node -e 'console.log(Date.now())')
 
 # Export span of the payment service project build process
 otel-cli export \
-  --name build-payment-service --start-time-nanos ${start_time} --end-time-nanos ${end_time} \
+  --name build-payment-service --start-time-millis ${start_time} --end-time-millis ${end_time} \
   --kind INTERNAL --status-code OK --attributes serviceName=payment-service buildTool=npm runtime=node
 
 ########################################
 
 ```
 
-#### Export trace (Parent-Child) [UNIX]
+#### Export trace (Parent-Child) [Linux]
 ```bash
 export OTEL_EXPORTER_OTLP_ENDPOINT=<YOUR-OTEL-VENDOR-OTLP-ENDPOINT>
 export OTEL_EXPORTER_OTLP_HEADERS=<YOUR-OTEL-VENDOR-API-AUTH_HEADER_NAME>=<YOUR-OTEL-VENDOR-API-AUTH_TOKEN>
@@ -358,7 +415,7 @@ end_time1=$(node -e 'console.log(Date.now())')
 
 # Export span of the auth service project build process
 otel-cli export \
-  --name build-auth-service --parent-span-id ${root_span_id} --start-time-nanos ${start_time1} --end-time-nanos ${end_time1} \
+  --name build-auth-service --parent-span-id ${root_span_id} --start-time-millis ${start_time1} --end-time-millis ${end_time1} \
   --kind INTERNAL --status-code OK --attributes serviceName=auth-service buildTool=maven runtime=java  
 
 ########################################
@@ -395,12 +452,151 @@ otel-cli export \
 ################################################################################
 ```
 
+#### Export trace asynchronously in background [Linux]
+```bash
+export OTEL_EXPORTER_OTLP_ENDPOINT=<YOUR-OTEL-VENDOR-OTLP-ENDPOINT>
+export OTEL_EXPORTER_OTLP_HEADERS=<YOUR-OTEL-VENDOR-API-AUTH-HEADER-NAME>=<YOUR-OTEL-VENDOR-API-AUTH-TOKEN>
+export OTEL_SERVICE_NAME=build
+# Specify port number to start server port on (the default value is "7777") 
+# to be used by "otel-cli server-start" command.
+# Additionally, this environment variable will also be picked up by "otel-cli export" command automatically 
+# while exporting traces to send asynchronously over OTEL CLI server.
+export OTEL_CLI_SERVER_PORT=12345
+export OTEL_CLI_TRACE_ID=$(otel-cli generate-id -t trace)
+
+# "start-server" command is blocking for the caller.
+# So we put "&" at the end of command to run OTEL CLI server in background without blocking here.
+otel-cli start-server &
+
+function shutdown_server {
+  # Shutdown OTEL CLI server.
+  # 
+  # Note: 
+  #     Even we don't shutdown manually, OTEL CLI server shutdown itself automatically 
+  #     when this bash process (its parent process) exits.
+  #     But in any way, it is good practice to shutdown by ourself explicitly.
+  otel-cli shutdown-server
+}
+trap shutdown_server EXIT
+
+# 1. Build auth service
+########################################
+
+# Get start time of auth service project build process in nanoseconds
+start_time=$(date +%s%9N)
+
+# Build auth service project
+pushd auth-service
+mvn clean package
+popd
+
+# Get end time of auth service project build process in nanoseconds
+end_time=$(date +%s%9N)
+
+# Export span of the auth service build process
+otel-cli export \
+  --name build-auth-service --start-time-nanos ${start_time} --end-time-nanos ${end_time} \
+  --kind INTERNAL --status-code OK --attributes serviceName=auth-service buildTool=maven runtime=java
+
+########################################
+
+# 2. Build payment service
+########################################
+
+# Get start time of payment service project build process in nanoseconds
+start_time=$(date +%s%9N)
+
+# Build payment service project
+pushd payment-service
+npm run build
+popd
+
+# Get end time of payment service project build process in nanoseconds
+end_time=$(date +%s%9N)
+
+# Export span of the payment service project build process
+otel-cli export \
+  --name build-payment-service --start-time-nanos ${start_time} --end-time-nanos ${end_time} \
+  --kind INTERNAL --status-code OK --attributes serviceName=payment-service buildTool=npm runtime=node
+
+########################################  
+```
+
+#### Export trace asynchronously in background [MacOS]
+```bash
+export OTEL_EXPORTER_OTLP_ENDPOINT=<YOUR-OTEL-VENDOR-OTLP-ENDPOINT>
+export OTEL_EXPORTER_OTLP_HEADERS=<YOUR-OTEL-VENDOR-API-AUTH-HEADER-NAME>=<YOUR-OTEL-VENDOR-API-AUTH-TOKEN>
+export OTEL_SERVICE_NAME=build
+# Specify port number to start server port on (the default value is "7777") 
+# to be used by "otel-cli server-start" command.
+# Additionally, this environment variable will also be picked up by "otel-cli export" command automatically 
+# while exporting traces to send asynchronously over OTEL CLI server.
+export OTEL_CLI_SERVER_PORT=12345
+export OTEL_CLI_TRACE_ID=$(otel-cli generate-id -t trace)
+
+# "start-server" command is blocking for the caller.
+# So we put "&" at the end of command to run OTEL CLI server in background without blocking here.
+otel-cli start-server &
+
+function shutdown_server {
+  # Shutdown OTEL CLI server.
+  # 
+  # Note: 
+  #     Even we don't shutdown manually, OTEL CLI server shutdown itself automatically 
+  #     when this bash process (its parent process) exits.
+  #     But in any way, it is good practice to shutdown by ourself explicitly.
+  otel-cli shutdown-server
+}
+trap shutdown_server EXIT
+
+# 1. Build auth service
+########################################
+
+# Get start time of auth service project build process in milliseconds ("date" command only support second resolution in MacOS)
+start_time=$(node -e 'console.log(Date.now())')
+
+# Build auth service project
+pushd auth-service
+mvn clean package
+popd
+
+# Get end time of auth service project build process in milliseconds ("date" command only support second resolution in MacOS)
+end_time=$(node -e 'console.log(Date.now())')
+
+# Export span of the auth service build process
+otel-cli export \
+  --name build-auth-service --start-time-millis ${start_time} --end-time-millis ${end_time} \
+  --kind INTERNAL --status-code OK --attributes serviceName=auth-service buildTool=maven runtime=java
+
+########################################
+
+# 1. Build payment service
+########################################
+
+# Get start time of payment service project build process in milliseconds ("date" command only support second resolution in MacOS)
+start_time=$(node -e 'console.log(Date.now())')
+
+# Build payment service project
+pushd payment-service
+npm run build
+popd
+
+# Get end time of payment service project build process in milliseconds ("date" command only support second resolution in MacOS)
+end_time=$(node -e 'console.log(Date.now())')
+
+# Export span of the payment service project build process
+otel-cli export \
+  --name build-payment-service --start-time-millis ${start_time} --end-time-millis ${end_time} \
+  --kind INTERNAL --status-code OK --attributes serviceName=payment-service buildTool=npm runtime=node
+
+########################################
+```
+
 ## Roadmap
 - Automated bash command tracing by wrapping command to be executed
 - `http/protobuf` support as OTLP protocol
 - `grpc` support as OTLP protocol
 - Batch transmission support while sending traces to OTLP endpoint to reduce network RTT (Round Trip Time)
-- Async (non-blocking) transmission support while sending traces to OTLP endpoint to reduce sync (blocking) transmission overhead
 
 ## Issues and Feedback
 
