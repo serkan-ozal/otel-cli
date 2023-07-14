@@ -70,9 +70,6 @@ export async function startServerCleaner(
             !currentParentProcessInfoHash ||
             initialParentProcessInfoHash != currentParentProcessInfoHash
         ) {
-            logger.info(
-                'OTEL CLI parent process exit detected. Gracefully shutting down OTEL CLI server ...'
-            );
             cleaner();
         }
     }, ZOMBIE_SERVER_CHECK_PERIOD);

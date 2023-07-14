@@ -84,6 +84,7 @@ export function startServer(
 export class ServerController {
     private readonly taskExecutor: TaskExecutor;
     private readonly traceExporter: TraceExporter;
+    private serverShutdown: boolean = false;
 
     constructor(taskExecutor: TaskExecutor, traceExporter: TraceExporter) {
         this.taskExecutor = taskExecutor;
@@ -104,8 +105,14 @@ export class ServerController {
     }
 
     async shutdown(): Promise<void> {
+        if (this.serverShutdown) {
+            return Promise.resolve();
+        }
+
+        logger.info('Shutting down OTEL CLI server ...');
         try {
             await this.taskExecutor.close();
+            this.serverShutdown = true;
             setTimeout(() => {
                 exit(0);
             }, SERVER_SHUTDOWN_GRACE_PERIOD);
