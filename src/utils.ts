@@ -1,4 +1,6 @@
 import { Attribute, Value } from './domain/Attribute';
+import * as logger from './logger';
+import { exit } from './exit';
 
 const SPAN_ID_BYTES = 8;
 const TRACE_ID_BYTES = 16;
@@ -99,4 +101,22 @@ export function flattenAttributes(
         }
         return { key, value: val } as Attribute;
     });
+}
+
+export function parseKeyValue(keyValuePairs: string[]): Map<string, string> {
+    return new Map(
+        (keyValuePairs || []).map((pair: string) => {
+            const separatorIdx: number = pair.indexOf('=');
+            if (separatorIdx < 0) {
+                logger.error(
+                    `Key-value pair must be in "key=value" format: ${pair}`
+                );
+                exit(1);
+            }
+            return [
+                pair.substring(0, separatorIdx),
+                pair.substring(separatorIdx + 1),
+            ];
+        })
+    );
 }

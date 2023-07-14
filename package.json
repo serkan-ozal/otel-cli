@@ -21,6 +21,7 @@
     "scripts": {
         "build": "tsc",
         "start": "ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" ./src/index.ts",
+        "start-server": "ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" ./src/server/bootstrap.ts",
         "test": "echo \"Error: no test specified\" && exit 1",
         "lint-check": "prettier --config .prettierrc.json --check ./src/*.ts ./src/**/*.ts",
         "lint-format": "prettier --config .prettierrc.json --write ./src/*.ts ./src/**/*.ts",
@@ -54,6 +55,7 @@
     "dependencies": {
         "axios": "^0.27.2",
         "chalk": "^4.1.2",
-        "commander": "^9.4.1"
+        "commander": "^9.4.1",
+        "find-process": "^1.4.7"
     }
 }
