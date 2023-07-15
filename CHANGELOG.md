@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. 
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.1.2"></a>
+# 1.1.2 (2023-07-16)
+
+### Fixes
+
+* Fix client blocking by server on trace request export
+  
 <a name="1.1.1"></a>
 # 1.1.1 (2023-07-15)
 
