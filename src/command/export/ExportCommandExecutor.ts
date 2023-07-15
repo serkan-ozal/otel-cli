@@ -53,16 +53,14 @@ export class ExportCommandExecutor implements CommandExecutor {
     private spanAttributes: Map<string, string>;
     private serverPort: number;
 
-    private _tryToGetTraceIdFromTraceParent(options: OptionValues): string | undefined {
-        const traceParent: string = options.traceParent || process.env.TRACEPARENT;
+    private _tryToGetTraceIdFromTraceParent(traceParent: string): string | undefined {
         if (traceParent) {
             return extractTraceIdFromTraceParent(traceParent);
         }
         return undefined;
     }
 
-    private _tryToGetParentSpanIdFromTraceParent(options: OptionValues): string | undefined {
-        const traceParent: string = options.traceParent || process.env.TRACEPARENT;
+    private _tryToGetParentSpanIdFromTraceParent(traceParent: string): string | undefined {
         if (traceParent) {
             return extractSpanIdFromTraceParent(traceParent);
         }
@@ -78,11 +76,13 @@ export class ExportCommandExecutor implements CommandExecutor {
         this.exporterOTLPProtocol = options.protocol;
         this.exporterOTLPHeaders = parseKeyValue(options.headers);
 
-        this.traceParent = options.traceparent || process.env.TRACEPARENT;
+        this.traceParent = !options.traceparentDisable
+            ? (options.traceparent || process.env.TRACEPARENT)
+            : undefined;
         this.traceParentPrint = options.traceparentPrint;
-        this.traceId = options.traceId || this._tryToGetTraceIdFromTraceParent(options);
+        this.traceId = options.traceId || this._tryToGetTraceIdFromTraceParent(this.traceParent);
         this.spanId = options.spanId;
-        this.parentSpanId = options.parentSpanId || this._tryToGetParentSpanIdFromTraceParent(options);
+        this.parentSpanId = options.parentSpanId || this._tryToGetParentSpanIdFromTraceParent(this.traceParent);
         this.spanName = options.name;
         this.serviceName = options.serviceName;
         this.spanKind = options.kind;
@@ -337,6 +337,12 @@ export class ExportCommandExecutor implements CommandExecutor {
                 new Option('-tp, --traceparent <header>', 'Traceparent header in W3C trace context format')
                     .makeOptionMandatory(false)
                     .default(process.env.TRACEPARENT)
+            )
+            .addOption(
+                new Option('-tpd, --traceparent-disable', 'Disable traceparent header based W3C trace context propagation for the exported span')
+                    .makeOptionMandatory(false)
+                    .default(process.env.OTEL_CLI_TRACEPARENT_DISABLE &&
+                        process.env.OTEL_CLI_TRACEPARENT_DISABLE.toLowerCase() === 'true')
             )
             .addOption(
                 new Option('-tpp, --traceparent-print', 'Print traceparent header in W3C trace context format for the exported span')
