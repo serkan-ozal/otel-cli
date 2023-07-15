@@ -38,7 +38,9 @@ export function startServer(
                             );
                             const traceRequest: TraceRequest =
                                 JSON.parse(requestBody);
-                            await serverController.export(traceRequest);
+                            // Don't wait promise as it blocks the client
+                            // until the request is actually exported to its final destination (OTLP endpoint)
+                            serverController.export(traceRequest);
                             response.end();
                         } else {
                             response.statusCode = 405;
