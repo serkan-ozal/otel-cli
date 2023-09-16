@@ -8,16 +8,15 @@ import {
     createServerController,
     ServerController,
     startServer,
-    startServerCleaner
+    startServerCleaner,
 } from '../../server';
+import { DEFAULT_SERVER_HOST, DEFAULT_SERVER_PORT } from '../../constants';
 
 import { Command, Option, OptionValues } from 'commander';
-import { DEFAULT_SERVER_HOST, DEFAULT_SERVER_PORT } from '../../constants';
 
 export class StartServerCommandExecutor implements CommandExecutor {
     private verboseEnabled: boolean;
     private exporterOTLPEndpoint: string;
-    private exporterOTLPTracesEndpoint: string;
     private exporterOTLPProtocol: string;
     private exporterOTLPHeaders: Map<string, string>;
     private serverPort: number;
@@ -31,39 +30,52 @@ export class StartServerCommandExecutor implements CommandExecutor {
             .addOption(
                 new Option('-v, --verbose', 'Enable verbose mode')
                     .makeOptionMandatory(false)
-                    .default(process.env.OTEL_CLI_VERBOSE &&
-                        process.env.OTEL_CLI_VERBOSE.toLowerCase() === 'true')
+                    .default(
+                        process.env.OTEL_CLI_VERBOSE &&
+                            process.env.OTEL_CLI_VERBOSE.toLowerCase() ===
+                                'true'
+                    )
             )
             .addOption(
-                new Option('-e, --endpoint <url>', 'OTEL Exporter OTLP endpoint')
-                    .makeOptionMandatory(false)
+                new Option(
+                    '-e, --endpoint <url>',
+                    'OTEL Exporter OTLP endpoint'
+                )
+                    .makeOptionMandatory(true)
                     .default(process.env.OTEL_EXPORTER_OTLP_ENDPOINT)
             )
             .addOption(
-                new Option('-te, --traces-endpoint <url>', 'OTEL Exporter OTLP traces endpoint')
-                    .makeOptionMandatory(false)
-                    .default(process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT)
-            )
-            .addOption(
-                new Option('-p, --protocol <protocol>', 'OTEL Exporter OTLP protocol')
+                new Option(
+                    '-p, --protocol <protocol>',
+                    'OTEL Exporter OTLP protocol'
+                )
                     .makeOptionMandatory(false)
                     .default(
                         process.env.OTEL_EXPORTER_OTLP_PROTOCOL ||
-                        ExporterOTLPProtocols.HTTP_JSON
+                            ExporterOTLPProtocols.HTTP_JSON
                     )
                     .choices(Object.values(ExporterOTLPProtocols))
             )
             .addOption(
-                new Option('-h, --headers <key-value-pairs...>', 'OTEL Exporter OTLP headers')
+                new Option(
+                    '-h, --headers <key-value-pairs...>',
+                    'OTEL Exporter OTLP headers'
+                )
                     .makeOptionMandatory(false)
-                    .default(process.env.OTEL_EXPORTER_OTLP_HEADERS &&
-                        process.env.OTEL_EXPORTER_OTLP_HEADERS.split(','))
+                    .default(
+                        process.env.OTEL_EXPORTER_OTLP_HEADERS &&
+                            process.env.OTEL_EXPORTER_OTLP_HEADERS.split(',')
+                    )
             )
             .addOption(
-                new Option('-sp, --server-port <port>',
-                    'OTEL CLI server port to start on')
+                new Option(
+                    '-sp, --server-port <port>',
+                    'OTEL CLI server port to start on'
+                )
                     .makeOptionMandatory(true)
-                    .default(process.env.OTEL_CLI_SERVER_PORT || DEFAULT_SERVER_PORT)
+                    .default(
+                        process.env.OTEL_CLI_SERVER_PORT || DEFAULT_SERVER_PORT
+                    )
             );
     }
 
@@ -72,28 +84,12 @@ export class StartServerCommandExecutor implements CommandExecutor {
         logger.setDebugEnabled(this.verboseEnabled);
 
         this.exporterOTLPEndpoint = options.endpoint;
-        this.exporterOTLPTracesEndpoint = options.tracesEndpoint;
         this.exporterOTLPProtocol = options.protocol;
         this.exporterOTLPHeaders = parseKeyValue(options.headers);
         this.serverPort = parseInt(options.serverPort);
     }
 
-    private _checkOptions(): void {
-        if (!this.exporterOTLPEndpoint && !this.exporterOTLPTracesEndpoint) {
-            logger.error(
-                'One of the OTEL Exporter OTLP endpoint ' +
-                'or OTEL Exporter OTLP traces endpoint configurations must be specified!'
-            );
-            exit(1);
-        }
-    }
-
-    private _resolveExporterOTLPTracesEndpoint(): string {
-        return (
-            this.exporterOTLPTracesEndpoint ||
-            this.exporterOTLPEndpoint + '/v1/traces'
-        );
-    }
+    private _checkOptions(): void {}
 
     private _resolveExporterOTLPHeaders(): string | undefined {
         if (!this.exporterOTLPHeaders || !this.exporterOTLPHeaders.size) {
@@ -121,7 +117,7 @@ export class StartServerCommandExecutor implements CommandExecutor {
         const serverController: ServerController | undefined =
             createServerController(
                 this.exporterOTLPProtocol,
-                this._resolveExporterOTLPTracesEndpoint(),
+                this.exporterOTLPEndpoint,
                 this.exporterOTLPHeaders
             );
         if (!serverController) {
@@ -146,7 +142,7 @@ export class StartServerCommandExecutor implements CommandExecutor {
             detached: true,
             stdio: 'ignore',
             env: {
-                OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: this._resolveExporterOTLPTracesEndpoint(),
+                OTEL_EXPORTER_OTLP_ENDPOINT: this.exporterOTLPEndpoint,
                 OTEL_EXPORTER_OTLP_PROTOCOL: this.exporterOTLPProtocol,
                 OTEL_EXPORTER_OTLP_HEADERS: this._resolveExporterOTLPHeaders(),
                 OTEL_CLI_SERVER_PORT: this.serverPort.toString(),
@@ -157,5 +153,4 @@ export class StartServerCommandExecutor implements CommandExecutor {
         child.unref();
         */
     }
-
 }

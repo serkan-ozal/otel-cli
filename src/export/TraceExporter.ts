@@ -1,5 +1,5 @@
-import { TraceRequest } from '../domain/TraceRequest';
+import { Span, TraceMetadata } from '../domain';
 
 export interface TraceExporter {
-    export(traceRequest: TraceRequest): Promise<void>;
+    export(metadata: TraceMetadata, spans: Span[]): Promise<void>;
 }

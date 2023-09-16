@@ -1,9 +1,10 @@
 import { createServer, IncomingMessage, Server, ServerResponse } from 'http';
+
 import * as logger from '../logger';
-import { TraceRequest } from '../domain/TraceRequest';
 import { TaskExecutor } from '../executor';
 import { createTraceExporter, TraceExporter } from '../export';
 import { exit } from '../exit';
+import { TraceData } from '../domain';
 
 const TASK_CONCURRENCY_LEVEL: number = 10;
 const SERVER_SHUTDOWN_GRACE_PERIOD = 1000;
@@ -36,11 +37,11 @@ export function startServer(
                             const requestBody: string = await _getRequestBody(
                                 request
                             );
-                            const traceRequest: TraceRequest =
+                            const traceData: TraceData =
                                 JSON.parse(requestBody);
                             // Don't wait promise as it blocks the client
                             // until the request is actually exported to its final destination (OTLP endpoint)
-                            serverController.export(traceRequest);
+                            serverController.export(traceData);
                             response.end();
                         } else {
                             response.statusCode = 405;
@@ -93,13 +94,18 @@ export class ServerController {
         this.traceExporter = traceExporter;
     }
 
-    export(traceRequest: TraceRequest): Promise<void> {
+    export(traceData: TraceData): Promise<void> {
         return this.taskExecutor.execute(async () => {
             try {
-                await this.traceExporter.export(traceRequest);
+                await this.traceExporter.export(
+                    traceData.metadata,
+                    traceData.spans
+                );
             } catch (err: any) {
                 logger.error(
-                    `Unable to export trace request: ${traceRequest}`,
+                    `Unable to export spans: ${JSON.stringify(
+                        traceData.spans
+                    )}`,
                     err
                 );
             }
@@ -127,13 +133,13 @@ export class ServerController {
 
 export function createServerController(
     exporterOTLPProtocol: string,
-    exporterOTLPTracesEndpoint: string,
+    exporterOTLPEndpoint: string,
     exporterOTLPHeaders: Map<string, string>
 ): ServerController | undefined {
     const taskExecutor: TaskExecutor = new TaskExecutor(TASK_CONCURRENCY_LEVEL);
     const traceExporter: TraceExporter = createTraceExporter(
         exporterOTLPProtocol,
-        exporterOTLPTracesEndpoint,
+        exporterOTLPEndpoint,
         exporterOTLPHeaders
     );
     return new ServerController(taskExecutor, traceExporter);

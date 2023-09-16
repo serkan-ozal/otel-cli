@@ -4,4 +4,6 @@ export * from './Resource';
 export * from './ResourceSpans';
 export * from './ScopeSpans';
 export * from './Span';
+export * from './TraceMetadata';
+export * from './TraceData';
 export * from './TraceRequest';

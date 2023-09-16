@@ -21,3 +21,5 @@ export const RESOURCE_ATTRIBUTES = {
     // The version string of the operating system
     OS_VERSION: 'os.version',
 };
+
+export const SAMPLED_TRACE_FLAG = 0x01;
