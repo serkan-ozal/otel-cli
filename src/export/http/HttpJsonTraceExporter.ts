@@ -68,6 +68,7 @@ export class HttpJsonTraceExporter implements TraceExporter {
                                 stringValue: metadata.serviceName,
                             },
                         },
+                        ...(metadata.resourceAttributes || []),
                     ],
                     droppedAttributesCount: 0,
                 },
