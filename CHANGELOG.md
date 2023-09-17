@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. 
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.3.0"></a>
+# 1.3.0 (2023-09-17)
+
+### Features
+
+* Introduce `--resource-attributes` (`-ra`) option to the export command for setting resource attributes of the exported span
+  
 <a name="1.2.0"></a>
 # 1.2.0 (2023-09-17)
 
