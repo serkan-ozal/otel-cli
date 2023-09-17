@@ -17,8 +17,8 @@ const PARENT_PROC_ID: number = parseInt(process.env.OTEL_CLI_SERVER_PPID || '');
 function _createServerController(): ServerController | undefined {
     const exporterOTLPProtocol: string | undefined =
         process.env.OTEL_EXPORTER_OTLP_PROTOCOL;
-    const exporterOTLPTracesEndpoint: string | undefined =
-        process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT;
+    const exporterOTLPEndpoint: string | undefined =
+        process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
     const exporterOTLPHeaderValues: string[] = process.env
         .OTEL_EXPORTER_OTLP_HEADERS
         ? process.env.OTEL_EXPORTER_OTLP_HEADERS.split(',')
@@ -33,15 +33,15 @@ function _createServerController(): ServerController | undefined {
         return;
     }
 
-    if (!exporterOTLPTracesEndpoint) {
-        logger.error('OTEL Exporter OTLP traces endpoint was not specified');
+    if (!exporterOTLPEndpoint) {
+        logger.error('OTEL Exporter OTLP endpoint was not specified');
         exit(1);
         return;
     }
 
     return createServerController(
         exporterOTLPProtocol,
-        exporterOTLPTracesEndpoint,
+        exporterOTLPEndpoint,
         exporterOTLPHeaders
     );
 }

@@ -1,4 +1,4 @@
-import { Attribute, Value } from './domain/Attribute';
+import { Attribute, Value } from './domain';
 import * as logger from './logger';
 import { exit } from './exit';
 

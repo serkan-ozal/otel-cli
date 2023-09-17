@@ -18,13 +18,21 @@ export class GenerateIdCommandExecutor implements CommandExecutor {
             .addOption(
                 new Option('-v, --verbose', 'Enable verbose mode')
                     .makeOptionMandatory(false)
-                    .default(process.env.OTEL_CLI_VERBOSE &&
-                        process.env.OTEL_CLI_VERBOSE.toLowerCase() === 'true')
+                    .default(
+                        process.env.OTEL_CLI_VERBOSE &&
+                            process.env.OTEL_CLI_VERBOSE.toLowerCase() ===
+                                'true'
+                    )
             )
             .addOption(
-                new Option('-t, --type <id-type>', 'Type of the id to be generated')
+                new Option(
+                    '-t, --type <id-type>',
+                    'Type of the id to be generated'
+                )
                     .makeOptionMandatory(true)
-                    .choices(Object.values(IdType).filter((o) => isNaN(Number(o))))
+                    .choices(
+                        Object.values(IdType).filter((o) => isNaN(Number(o)))
+                    )
             );
     }
 
@@ -43,5 +51,4 @@ export class GenerateIdCommandExecutor implements CommandExecutor {
                 throw new Error(`Unrecognized id type: ${options.type}`);
         }
     }
-
 }

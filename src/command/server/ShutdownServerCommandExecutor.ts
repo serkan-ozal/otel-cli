@@ -22,14 +22,21 @@ export class ShutdownServerCommandExecutor implements CommandExecutor {
             .addOption(
                 new Option('-v, --verbose', 'Enable verbose mode')
                     .makeOptionMandatory(false)
-                    .default(process.env.OTEL_CLI_VERBOSE &&
-                        process.env.OTEL_CLI_VERBOSE.toLowerCase() === 'true')
+                    .default(
+                        process.env.OTEL_CLI_VERBOSE &&
+                            process.env.OTEL_CLI_VERBOSE.toLowerCase() ===
+                                'true'
+                    )
             )
             .addOption(
-                new Option('-sp, --server-port <port>',
-                    'OTEL CLI server port for communicating over to shutdown gracefully')
+                new Option(
+                    '-sp, --server-port <port>',
+                    'OTEL CLI server port for communicating over to shutdown gracefully'
+                )
                     .makeOptionMandatory(false)
-                    .default(process.env.OTEL_CLI_SERVER_PORT || DEFAULT_SERVER_PORT)
+                    .default(
+                        process.env.OTEL_CLI_SERVER_PORT || DEFAULT_SERVER_PORT
+                    )
             );
     }
 
@@ -54,7 +61,9 @@ export class ShutdownServerCommandExecutor implements CommandExecutor {
 
         const serverURL: string = `http://${DEFAULT_SERVER_HOST}:${this.serverPort}/shutdown`;
         try {
-            const res: AxiosResponse = await axios.delete(serverURL, { timeout: SHUTDOWN_REQUEST_TIMEOUT });
+            const res: AxiosResponse = await axios.delete(serverURL, {
+                timeout: SHUTDOWN_REQUEST_TIMEOUT,
+            });
             if (res.status / 100 != 2) {
                 throw new Error(
                     `Invalid response (status code=${res.status}) from server endpoint ${serverURL}`
@@ -72,5 +81,4 @@ export class ShutdownServerCommandExecutor implements CommandExecutor {
             }
         }
     }
-
 }

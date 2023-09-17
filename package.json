@@ -23,8 +23,8 @@
         "start": "ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" ./src/index.ts",
         "start-server": "ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" ./src/server/bootstrap.ts",
         "test": "echo \"Error: no test specified\" && exit 1",
-        "lint-check": "prettier --config .prettierrc.json --check ./src/*.ts ./src/**/*.ts",
-        "lint-format": "prettier --config .prettierrc.json --write ./src/*.ts ./src/**/*.ts",
+        "lint-check": "prettier --config .prettierrc.json --check ./src/*.ts ./src/**/*.ts ./src/**/**/*.ts ./src/**/**/**/*.ts",
+        "lint-format": "prettier --config .prettierrc.json --write ./src/*.ts ./src/**/*.ts ./src/**/**/*.ts ./src/**/**/**/*.ts",
         "release-patch": "release-it --ci --git.commit --git.push --git.tag --git.tagName='v${version}' --github.release --no-git.requireCleanWorkingDir --no-git.requireUpstream --npm.publish --npm.skipChecks",
         "release-minor": "release-it minor --ci --git.commit --git.push --git.tag --git.tagName='v${version}' --github.release --no-git.requireCleanWorkingDir --no-git.requireUpstream --npm.publish --npm.skipChecks",
         "release-major": "release-it major --ci --git.commit --git.push --git.tag --git.tagName='v${version}' --github.release --no-git.requireCleanWorkingDir --no-git.requireUpstream --npm.publish --npm.skipChecks",
@@ -53,6 +53,7 @@
         "typescript": "^4.8.4"
     },
     "dependencies": {
+        "@opentelemetry/exporter-trace-otlp-grpc": "^0.43.0",
         "axios": "^0.27.2",
         "chalk": "^4.1.2",
         "commander": "^9.4.1",
