@@ -26,8 +26,13 @@ import {
 } from '../../export';
 import * as logger from '../../logger';
 import { Commands } from '../index';
+import { RESOURCE_ATTRIBUTES } from '../../constants';
 
 import { Command, Option, OptionValues } from 'commander';
+
+const MANAGED_RESOURCE_ATTRIBUTES: string[] = [
+    RESOURCE_ATTRIBUTES.SERVICE_NAME,
+];
 
 export class ExportCommandExecutor implements CommandExecutor {
     private verboseEnabled: boolean;
@@ -53,7 +58,9 @@ export class ExportCommandExecutor implements CommandExecutor {
     private spanStatusCode: string;
     private spanStatusMessage: string;
     private spanAttributes: Map<string, string>;
+    private resourceAttributes: Map<string, string>;
     private serverPort: number;
+    private traceMetadata: TraceMetadata;
 
     private _tryToGetTraceIdFromTraceParent(
         traceParent: string
@@ -71,6 +78,15 @@ export class ExportCommandExecutor implements CommandExecutor {
             return extractSpanIdFromTraceParent(traceParent);
         }
         return undefined;
+    }
+
+    private _normalizeResourceAttributes(
+        resourceAttributes: Map<string, string>
+    ): Map<string, string> {
+        MANAGED_RESOURCE_ATTRIBUTES.forEach((a: string) =>
+            resourceAttributes.delete(a)
+        );
+        return resourceAttributes;
     }
 
     private _parseOptions(options: OptionValues): void {
@@ -106,7 +122,15 @@ export class ExportCommandExecutor implements CommandExecutor {
         this.spanStatusCode = options.statusCode;
         this.spanStatusMessage = options.statusMessage;
         this.spanAttributes = parseKeyValue(options.attributes);
+        this.resourceAttributes = this._normalizeResourceAttributes(
+            parseKeyValue(options.resourceAttributes)
+        );
         this.serverPort = parseInt(options.serverPort);
+
+        this.traceMetadata = {
+            serviceName: this.serviceName,
+            resourceAttributes: flattenAttributes(this.resourceAttributes),
+        } as TraceMetadata;
     }
 
     private _checkOptions(): void {
@@ -446,6 +470,17 @@ export class ExportCommandExecutor implements CommandExecutor {
             )
             .addOption(
                 new Option(
+                    '-ra --resource-attributes <key-value-pairs...>',
+                    'Resource attributes as space seperated key-value pairs (key1=value1 key2=value2 key3=value3)'
+                )
+                    .makeOptionMandatory(false)
+                    .default(
+                        process.env.OTEL_RESOURCE_ATTRIBUTES &&
+                            process.env.OTEL_RESOURCE_ATTRIBUTES.split(',')
+                    )
+            )
+            .addOption(
+                new Option(
                     '-sp, --server-port <port>',
                     'OTEL CLI server port for communicating over to export traces asynchronously in background'
                 )
@@ -459,11 +494,9 @@ export class ExportCommandExecutor implements CommandExecutor {
 
         this._checkOptions();
 
-        const metadata: TraceMetadata = {
-            serviceName: this.serviceName,
-        } as TraceMetadata;
         const spans: Span[] = [this._createSpan()];
-        await this._exportSpans(metadata, spans);
+        await this._exportSpans(this.traceMetadata, spans);
+
         if (this.traceParentPrint) {
             console.log(this._generateTraceParent());
         }

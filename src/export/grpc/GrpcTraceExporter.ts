@@ -120,6 +120,9 @@ export class GrpcTraceExporter implements TraceExporter {
                     attributes: {
                         [RESOURCE_ATTRIBUTES.SERVICE_NAME]:
                             metadata.serviceName,
+                        ...this._toAttributes(
+                            metadata.resourceAttributes || []
+                        ),
                     },
                 },
                 instrumentationLibrary: {
